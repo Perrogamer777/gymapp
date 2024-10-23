@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() {
   runApp(const GymApp());
@@ -86,25 +88,31 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   DateTime _focusedDay = DateTime.now();
   String? _selectedTimeSlot;
 
-  // Lista de horarios disponibles
   final List<String> _timeSlots = [
     '06:00 - 07:30', '07:30 - 09:00', '09:00 - 10:30',
     '10:30 - 12:00', '12:00 - 13:30', '13:30 - 15:00',
     '15:00 - 16:30', '16:30 - 18:00', '18:00 - 19:30',
-    '19:30 - 21:00', '21:00 - 22:30'
+    '19:30 - 21:00'
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    initializeDateFormatting('es_ES', null);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Calendario mostrando solo la semana
         TableCalendar(
           focusedDay: _focusedDay,
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2030, 12, 31),
           calendarFormat: _calendarFormat,
-          headerVisible: false, // Oculta el encabezado
+          startingDayOfWeek: StartingDayOfWeek.monday,
+          locale: 'es_ES',
+          headerVisible: false,
           selectedDayPredicate: (day) {
             return isSameDay(_selectedDay, day);
           },
@@ -120,6 +128,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               color: Colors.blue,
               shape: BoxShape.circle,
             ),
+          ),
+          daysOfWeekStyle: const DaysOfWeekStyle(
+            weekdayStyle: TextStyle(color: Colors.black),
+            weekendStyle: TextStyle(color: Colors.red),
           ),
         ),
         const Divider(),
