@@ -81,10 +81,18 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
-  final CalendarFormat _calendarFormat = CalendarFormat.week;
+  CalendarFormat _calendarFormat = CalendarFormat.week;
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
-  TimeOfDay? _selectedTime;
+  String? _selectedTimeSlot;
+
+  // Lista de horarios disponibles
+  final List<String> _timeSlots = [
+    '06:00 - 07:30', '07:30 - 09:00', '09:00 - 10:30',
+    '10:30 - 12:00', '12:00 - 13:30', '13:30 - 15:00',
+    '15:00 - 16:30', '16:30 - 18:00', '18:00 - 19:30',
+    '19:30 - 21:00', '21:00 - 22:30'
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -116,20 +124,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         ),
         const Divider(),
 
-        // Lista de horas del día
+        // Lista de horarios disponibles
         Expanded(
           child: ListView.builder(
-            itemCount: 24,
+            itemCount: _timeSlots.length,
             itemBuilder: (context, index) {
-              final hour = index;
-              final time = TimeOfDay(hour: hour, minute: 0);
-              final isSelected = _selectedTime == time;
+              final timeSlot = _timeSlots[index];
+              final isSelected = _selectedTimeSlot == timeSlot;
               return ListTile(
-                title: Text('${hour.toString().padLeft(2, '0')}:00'),
+                title: Text(timeSlot),
                 tileColor: isSelected ? Colors.blue.withOpacity(0.3) : null,
                 onTap: () {
                   setState(() {
-                    _selectedTime = time;
+                    _selectedTimeSlot = timeSlot;
                   });
                 },
               );
@@ -141,11 +148,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
-            onPressed: _selectedTime == null
+            onPressed: _selectedTimeSlot == null
                 ? null
                 : () {
                     // Lógica para reservar una hora
-                    print('Reservar hora para: ${_selectedDay.toString()} a las ${_selectedTime!.format(context)}');
+                    print('Reservar hora para: ${_selectedDay.toString()} en el horario $_selectedTimeSlot');
                   },
             child: Text('Reservar Hora'),
           ),
