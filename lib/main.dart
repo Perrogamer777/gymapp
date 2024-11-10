@@ -4,17 +4,21 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    print('Firebase inicializado correctamente');
   } catch (e) {
-    print('Error initializing Firebase: $e');
+    print('Error al inicializar Firebase: $e');
   }
   
-  runApp(GymApp());
+  runApp(const GymApp());
 }
 
 class GymApp extends StatelessWidget {
@@ -87,6 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
+  
 
   @override
   _ScheduleScreenState createState() => _ScheduleScreenState();
@@ -104,6 +109,47 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     '15:00 - 16:30', '16:30 - 18:00', '18:00 - 19:30',
     '19:30 - 21:00'
   ];
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<void> _bookTimeSlot() async {
+    if (_selectedTimeSlot == null) return;
+
+    try {
+      // Convertir la fecha a un formato que Firestore pueda manejar
+      final dateToSave = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+      
+      Map<String, dynamic> bookingData = {
+        'date': dateToSave.toIso8601String(), // Guardamos como string
+        'timeSlot': _selectedTimeSlot,
+        'status': 'confirmed',
+        'createdAt': DateTime.now().toIso8601String(),
+      };
+
+      await _firestore
+          .collection('schedules')
+          .add(bookingData);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Hora reservada con éxito!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error al reservar: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al reservar. Intente nuevamente.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {

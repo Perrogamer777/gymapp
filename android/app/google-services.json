@@ -8,9 +8,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1058027553432:android:32450b1a129a9d7c5486ed",
+        "mobilesdk_app_id": "1:1058027553432:android:07b08d8464b8b79d5486ed",
         "android_client_info": {
-          "package_name": "com.example.gymapp"
+          "package_name": "com.luisOlavarria.gymapp"
         }
       },
       "oauth_client": [],
