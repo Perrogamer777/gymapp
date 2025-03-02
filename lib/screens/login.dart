@@ -11,8 +11,12 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _loading = false;
 
   Future<void> _login() async {
+    setState(() {
+      _loading = true;
+    });
     try {
       UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text, password: _passwordController.text);
@@ -25,6 +29,15 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } on FirebaseAuthException catch (e) {
       print('Error al iniciar sesión: $e');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Error al iniciar sesión: ${e.message}'),
+        backgroundColor: Colors.red,
+      ));
+    }
+    finally {
+      setState(() {
+        _loading = false;
+      });
     }
   }
 
