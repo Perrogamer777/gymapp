@@ -5,6 +5,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'screens/login.dart'; // Importar las pantalla de login
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +33,11 @@ class GymApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const HomeScreen(),
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
+      },
     );
   }
 }
@@ -116,11 +122,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     if (_selectedTimeSlot == null) return;
 
     try {
-      // Convertir la fecha a un formato que Firestore pueda manejar
+      // Convertir la fecha 
       final dateToSave = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
       
       Map<String, dynamic> bookingData = {
-        'date': dateToSave.toIso8601String(), // Guardamos como string
+        'date': dateToSave.toIso8601String(), 
         'timeSlot': _selectedTimeSlot,
         'status': 'confirmed',
         'createdAt': DateTime.now().toIso8601String(),
