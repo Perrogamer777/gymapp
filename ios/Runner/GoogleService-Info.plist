@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CLIENT_ID</key>
+	<string>1058027553432-93ugj14ejeupciosfbhatlfstg4q3031.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1058027553432-93ugj14ejeupciosfbhatlfstg4q3031</string>
 	<key>API_KEY</key>
 	<string>AIzaSyBasrZO5WwaTNd8vCWePq31vfg0Sz8rpto</string>
 	<key>GCM_SENDER_ID</key>
@@ -9,7 +13,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.gymapp</string>
+	<string>com.luisOlavarria.gymapp</string>
 	<key>PROJECT_ID</key>
 	<string>gymapp-e91e4</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,7 +29,7 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:1058027553432:ios:86f55da470a19bed5486ed</string>
+	<string>1:1058027553432:ios:8a40d869fbf9aa4e5486ed</string>
 	<key>DATABASE_URL</key>
 	<string>https://gymapp-e91e4-default-rtdb.firebaseio.com</string>
 </dict>

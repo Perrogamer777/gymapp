@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
@@ -5,7 +6,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'screens/login.dart'; // Importar las pantalla de login
+import 'screens/login.dart'; // Importar la pantalla de login
+import 'screens/register.dart'; // Importar la pantalla de registro
 
 
 void main() async {
@@ -35,6 +37,7 @@ class GymApp extends StatelessWidget {
       ),
       initialRoute: '/login',
       routes: {
+        '/register': (context) => const RegisterScreen(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
       },
@@ -54,9 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Pantallas de navegación
   final List<Widget> _screens = [
-    ScheduleScreen(),
-    AttendanceScreen(),
-    ProfileScreen(),
+    const ScheduleScreen(),
+    const AttendanceScreen(),
+    const ProfileScreen(),
   ];
 
   // Cambia de pestaña
@@ -66,11 +69,32 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _signOut() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      Navigator.pushReplacementNamed(context, '/login');
+    } catch (e) {
+      print('Error al cerrar sesión: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error al cerrar sesión. Intente nuevamente.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Horas'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.exit_to_app),
+            onPressed: _signOut,
+          ),
+        ],
       ),
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
