@@ -19,8 +19,10 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text, password: _passwordController.text);
-      
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
       if (userCredential.user != null) {
         print('Inicio de sesión correcto para ${userCredential.user!.email}');
         Navigator.pushReplacementNamed(context, '/home'); // Navegar a la pantalla principal
@@ -33,8 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
         content: Text('Error al iniciar sesión: ${e.message}'),
         backgroundColor: Colors.red,
       ));
-    }
-    finally {
+    } finally {
       setState(() {
         _loading = false;
       });
@@ -102,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text('Iniciar sesión'),
                     style: ElevatedButton.styleFrom(
                       textStyle: const TextStyle(fontSize: 20),
-                      foregroundColor: Colors.white, // Cambia el color del texto aquí
+                      foregroundColor: Colors.white,
                       backgroundColor: Colors.blue,
                       minimumSize: const Size(double.infinity, 50), // Ancho completo
                       shape: RoundedRectangleBorder(
@@ -110,13 +111,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/register');
-                    },
-                    child: const Text('Crear cuenta'),
-                  ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/register');
+              },
+              child: const Text('¿No tienes una cuenta? Regístrate aquí'),
+            ),
           ],
         ),
       ),

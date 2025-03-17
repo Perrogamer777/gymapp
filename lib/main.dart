@@ -9,7 +9,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'screens/login.dart'; // Importar la pantalla de login
 import 'screens/register.dart'; // Importar la pantalla de registro
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -88,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Horas'),
+        title: const Text('Gym'),
         actions: [
           IconButton(
             icon: const Icon(Icons.exit_to_app),
@@ -150,6 +149,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       final dateToSave = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
       
       Map<String, dynamic> bookingData = {
+        'uid': FirebaseAuth.instance.currentUser!.uid, // Agregar UID del usuario
         'date': dateToSave.toIso8601String(), 
         'timeSlot': _selectedTimeSlot,
         'status': 'confirmed',
@@ -248,11 +248,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           child: ElevatedButton(
             onPressed: _selectedTimeSlot == null
                 ? null
-                : () {
-                    // Lógica para reservar una hora
-                    print('Reservar hora para: ${_selectedDay.toString()} en el horario $_selectedTimeSlot');
-                  },
-            child: Text('Reservar Hora'),
+                : _bookTimeSlot,
+            child: const Text('Reservar Hora'),
           ),
         ),
       ],
@@ -274,15 +271,96 @@ class AttendanceScreen extends StatelessWidget {
   }
 }
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  _ProfileScreenState createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  User? user;
+  Map<String, dynamic>? userData;
+  List<Map<String, dynamic>> userBookings = [];
+
+  @override
+  void initState() {
+    super.initState();
+    user = FirebaseAuth.instance.currentUser;
+    _fetchUserData();
+    _fetchUserBookings();
+  }
+
+  Future<void> _fetchUserData() async {
+    if (user != null) {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+      setState(() {
+        userData = userDoc.data() as Map<String, dynamic>?;
+      });
+    }
+  }
+
+  Future<void> _fetchUserBookings() async {
+    if (user != null) {
+      QuerySnapshot bookingDocs = await FirebaseFirestore.instance
+          .collection('schedules')
+          .where('uid', isEqualTo: user!.uid)
+          .get();
+      setState(() {
+        userBookings = bookingDocs.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text(
-        'Pantalla de Perfil',
-        style: TextStyle(fontSize: 24),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Perfil'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: userData != null ? Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Center(
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    child: Icon(Icons.person, size: 50),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '${userData!['name']} ${userData!['surename']}',
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Horas Reservadas:',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.builder(
+                itemCount: userBookings.length,
+                itemBuilder: (context, index) {
+                  final booking = userBookings[index];
+                  return ListTile(
+                    title: Text('Fecha: ${booking['date']}'),
+                    subtitle: Text('Horario: ${booking['timeSlot']}'),
+                  );
+                },
+              ),
+            ),
+          ],
+        ) : const Center(
+          child: CircularProgressIndicator(),
+        ),
       ),
     );
   }

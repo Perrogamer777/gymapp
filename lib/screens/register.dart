@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -15,22 +16,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _surenameController = TextEditingController();
   bool _loading = false;
 
-  Future<void> _register() async {
+Future<void> _register() async {
     setState(() {
       _loading = true;
     });
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
       );
 
-      await userCredential.user?.updateProfile(displayName: _nameController.text);
-      await userCredential.user?.reload();
-      // userCredential.user = FirebaseAuth.instance.currentUser;
+      User? user = FirebaseAuth.instance.currentUser;
+      await user?.updateProfile(displayName: _nameController.text);
+      await user?.reload();
+      user = FirebaseAuth.instance.currentUser;
 
-      if (userCredential.user != null) {
-        print('Registro exitoso para ${userCredential.user!.email}');
+      if (user != null) {
+        // Guardar los datos del usuario en Firestore
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'uid': user.uid,
+          'name': _nameController.text,
+          'surename': _surenameController.text,
+          'email': _emailController.text,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        print('Registro exitoso para ${user.email}');
         Navigator.pushReplacementNamed(context, '/home'); // Navegar a la pantalla principal
       } else {
         print('Error: Usuario no encontrado');
