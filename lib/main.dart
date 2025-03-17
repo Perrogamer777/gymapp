@@ -68,6 +68,36 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+Future<void> _confirmSignOut() async {
+  final shouldSignOut = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Confirmar Cierre de Sesión'),
+        content: const Text('¿Está seguro de que deseas cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(false); // No cerrar sesión
+            },
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(true); // Confirmar cierre de sesión
+            },
+            child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (shouldSignOut == true) {
+    _signOut();
+  }
+}
+
   Future<void> _signOut() async {
     try {
       await FirebaseAuth.instance.signOut();
@@ -91,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.exit_to_app),
-            onPressed: _signOut,
+            onPressed: _confirmSignOut,
           ),
         ],
       ),
@@ -141,50 +171,35 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> _bookTimeSlot() async {
-    if (_selectedTimeSlot == null) return;
-
-    try {
-      // Convertir la fecha 
-      final dateToSave = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
-      
-      Map<String, dynamic> bookingData = {
-        'uid': FirebaseAuth.instance.currentUser!.uid, // Agregar UID del usuario
-        'date': dateToSave.toIso8601String(), 
-        'timeSlot': _selectedTimeSlot,
-        'status': 'confirmed',
-        'createdAt': DateTime.now().toIso8601String(),
-      };
-
-      await _firestore
-          .collection('schedules')
-          .add(bookingData);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Hora reservada con éxito!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      print('Error al reservar: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error al reservar. Intente nuevamente.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  // Mapa para almacenar los slots ocupados
+  Map<String, bool> _occupiedSlots = {};
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('es_ES', null);
+    _fetchOccupiedSlots(); // Cargar slots ocupados al iniciar
+  }
+
+  // Función para obtener los slots ocupados
+  Future<void> _fetchOccupiedSlots() async {
+    final dateToCheck = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+    
+    try {
+      final querySnapshot = await _firestore
+          .collection('schedules')
+          .where('date', isEqualTo: dateToCheck.toIso8601String())
+          .get();
+
+      setState(() {
+        _occupiedSlots = {};
+        for (var doc in querySnapshot.docs) {
+          _occupiedSlots[doc['timeSlot']] = true;
+        }
+      });
+    } catch (e) {
+      print('Error al obtener horarios ocupados: $e');
+    }
   }
 
   @override
@@ -206,7 +221,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             setState(() {
               _selectedDay = selectedDay;
               _focusedDay = focusedDay;
+              _selectedTimeSlot = null; // Resetear slot seleccionado
             });
+            _fetchOccupiedSlots(); // Actualizar slots ocupados al cambiar de día
           },
           calendarStyle: const CalendarStyle(
             isTodayHighlighted: true,
@@ -229,14 +246,30 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             itemBuilder: (context, index) {
               final timeSlot = _timeSlots[index];
               final isSelected = _selectedTimeSlot == timeSlot;
+              final isOccupied = _occupiedSlots[timeSlot] ?? false;
+
               return ListTile(
-                title: Text(timeSlot),
-                tileColor: isSelected ? Colors.blue.withOpacity(0.3) : null,
-                onTap: () {
-                  setState(() {
-                    _selectedTimeSlot = timeSlot;
-                  });
-                },
+                title: Text(
+                  timeSlot,
+                  style: TextStyle(
+                    color: isOccupied ? Colors.grey : Colors.black,
+                  ),
+                ),
+                tileColor: isOccupied 
+                    ? Colors.grey.withOpacity(0.2)
+                    : isSelected 
+                        ? Colors.blue.withOpacity(0.3) 
+                        : null,
+                onTap: isOccupied 
+                    ? null 
+                    : () {
+                        setState(() {
+                          _selectedTimeSlot = timeSlot;
+                        });
+                      },
+                trailing: isOccupied 
+                    ? const Icon(Icons.event_busy, color: Colors.red)
+                    : null,
               );
             },
           ),
@@ -246,7 +279,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
-            onPressed: _selectedTimeSlot == null
+            onPressed: _selectedTimeSlot == null || _occupiedSlots[_selectedTimeSlot] == true
                 ? null
                 : _bookTimeSlot,
             child: const Text('Reservar Hora'),
@@ -254,6 +287,70 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _bookTimeSlot() async {
+    if (_selectedTimeSlot == null) return;
+
+    try {
+      final dateToSave = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+      
+      // Verificar nuevamente si el horario ya está ocupado
+      final existingBooking = await _firestore
+          .collection('schedules')
+          .where('date', isEqualTo: dateToSave.toIso8601String())
+          .where('timeSlot', isEqualTo: _selectedTimeSlot)
+          .get();
+
+      if (existingBooking.docs.isNotEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Este horario ya ha sido reservado'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      Map<String, dynamic> bookingData = {
+        'uid': FirebaseAuth.instance.currentUser!.uid,
+        'date': dateToSave.toIso8601String(),
+        'timeSlot': _selectedTimeSlot,
+        'status': 'confirmed',
+        'createdAt': DateTime.now().toIso8601String(),
+      };
+
+      await _firestore
+          .collection('schedules')
+          .add(bookingData);
+
+      // Actualizar la lista de slots ocupados
+      setState(() {
+        _occupiedSlots[_selectedTimeSlot!] = true;
+        _selectedTimeSlot = null;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Hora reservada con éxito!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error al reservar: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al reservar. Intente nuevamente.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
 
@@ -326,7 +423,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Center(
               child: Column(
                 children: [
-                  CircleAvatar(
+                  const CircleAvatar(
                     radius: 50,
                     child: Icon(Icons.person, size: 50),
                   ),
