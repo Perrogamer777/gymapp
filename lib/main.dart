@@ -418,6 +418,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _fetchUserBookings();
   }
 
+  Future<void> _confirmCancelBooking(String date, String timeSlot, String docId) async {
+    final shouldCancel = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirmar Cancelación'),
+          content: Text('¿Estás seguro de que deseas cancelar la reserva del día $date a las $timeSlot?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false); // No cancelar
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true); // Confirmar cancelación
+              },
+              child: const Text('Sí, Cancelar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldCancel == true) {
+      await _cancelBooking(docId);
+    }
+  }
+
+  Future<void> _cancelBooking(String docId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('schedules')
+          .doc(docId)
+          .delete();
+
+      // Actualizar la lista de reservas
+      await _fetchUserBookings();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reserva cancelada con éxito'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error al cancelar la reserva: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al cancelar la reserva. Intente nuevamente.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _fetchUserData() async {
     if (user != null) {
       DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
@@ -434,7 +495,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .where('uid', isEqualTo: user!.uid)
           .get();
       setState(() {
-        userBookings = bookingDocs.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+        userBookings = bookingDocs.docs.map((doc) => {
+          ...doc.data() as Map<String, dynamic>,
+          'docId': doc.id, 
+        }).toList();
       });
     }
   }
@@ -477,9 +541,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 itemCount: userBookings.length,
                 itemBuilder: (context, index) {
                   final booking = userBookings[index];
-                  return ListTile(
-                    title: Text('Fecha: ${booking['date']}'),
-                    subtitle: Text('Horario: ${booking['timeSlot']}'),
+                  final date = DateTime.parse(booking['date']);
+                  final formattedDate = DateFormat('dd/MM/yyyy').format(date);
+                  
+                  return Card(
+                    child: ListTile(
+                      title: Text('Fecha: $formattedDate'),
+                      subtitle: Text('Horario: ${booking['timeSlot']}'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.cancel, color: Colors.red),
+                        onPressed: () => _confirmCancelBooking(
+                          formattedDate,
+                          booking['timeSlot'],
+                          booking['docId'],
+                        ),
+                      ),
+                    ),
                   );
                 },
               ),
