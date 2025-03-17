@@ -281,13 +281,43 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           child: ElevatedButton(
             onPressed: _selectedTimeSlot == null || _occupiedSlots[_selectedTimeSlot] == true
                 ? null
-                : _bookTimeSlot,
+                : _confirmBooking,
             child: const Text('Reservar Hora'),
           ),
         ),
       ],
     );
   }
+
+  Future<void> _confirmBooking() async {
+  final shouldBook = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Confirmar Reserva'),
+        content: Text('¿Estás seguro de que deseas reservar el horario ${_selectedTimeSlot} para el día ${DateFormat('dd/MM/yyyy').format(_selectedDay)}?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(false); // No reservar
+            },
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(true); // Confirmar reserva
+            },
+            child: const Text('Reservar'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (shouldBook == true) {
+    _bookTimeSlot();
+  }
+}
 
   Future<void> _bookTimeSlot() async {
     if (_selectedTimeSlot == null) return;
