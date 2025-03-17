@@ -519,7 +519,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   const CircleAvatar(
                     radius: 50,
-                    child: Icon(Icons.person, size: 50),
+                    backgroundImage: NetworkImage('https://www.laxcali.com/uploads/newsarticle/85352b9e99c044c0b7f1cf2122fc7a3d/dua-lipa-akbee75ukpi7cr1k.jpg'),
                   ),
                   const SizedBox(height: 16),
                   Text(
