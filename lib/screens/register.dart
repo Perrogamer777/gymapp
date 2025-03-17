@@ -12,6 +12,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _surenameController = TextEditingController();
   bool _loading = false;
 
   Future<void> _register() async {
@@ -71,7 +72,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
-                labelText: 'Nombre de usuario',
+                labelText: 'Nombre',
+                prefixIcon: Icon(Icons.person),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _surenameController,
+              decoration: InputDecoration(
+                labelText: 'Apellido',
                 prefixIcon: Icon(Icons.person),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
